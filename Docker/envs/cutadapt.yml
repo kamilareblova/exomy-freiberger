@@ -1,0 +1,6 @@
+name: cutadapt
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - cutadapt=1.18=py36h14c3975_1

@@ -1,0 +1,6 @@
+name: biopet
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - biopet=0.9.0=py36_0

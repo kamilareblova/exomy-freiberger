@@ -1,0 +1,10 @@
+name: vardict
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - vardict=2018.10.18=pl526_1
+  - vardict-java=1.5.1=0
+  - r-base=3.6.0=hce969dd_0
+  - samtools=1.6=h244ad75_5
+  - r-data.table=1.13.6=r36hcfec24a_0

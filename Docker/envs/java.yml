@@ -1,0 +1,6 @@
+name: java
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - openjdk=8.0.152=h7b6447c_3

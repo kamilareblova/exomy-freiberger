@@ -1,0 +1,7 @@
+name: py36
+channels:
+  - defaults
+  - bioconda
+dependencies:
+  - python=3.6.13=h12debd9_1
+  - cyvcf2=0.10.10=py36hbbd59f4_0

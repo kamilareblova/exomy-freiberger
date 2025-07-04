@@ -1,0 +1,44 @@
+process ALIGN {
+	tag "ALIGN on $name using $task.cpus CPUs and $task.memory memory"
+	publishDir "${params.outDirectory}/${sample.run}/mapped/", mode:'copy'
+      
+        label "l_cpu"
+        label "l_mem"
+ 
+	
+	input:
+	tuple val(name), val(sample), path(reads)
+
+	output:
+    tuple val(name), val(sample), path("${name}.mdup.sorted.bam"), path("${name}.mdup.sorted.bai")
+
+	script:
+	rg = "\"@RG\\tID:${name}\\tSM:${name}\\tLB:${name}\\tPL:ILLUMINA\""
+	"""
+	echo ALIGN $name
+	source activate bwa
+	bwa mem -R ${rg} -t $task.cpus ${params.refindex}.fa $reads | samblaster |samtools view -Sb - | sambamba sort /dev/stdin -o ${name}.mdup.sorted.bam
+        samtools index ${name}.mdup.sorted.bam ${name}.mdup.sorted.bai
+	"""
+}
+
+process VARDICT {
+        tag "VARDICT on $name using $task.cpus CPUs and $task.memory memory"
+        publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
+
+        label "l_cpu"
+        label "l_mem"
+ 
+        input:
+        tuple val(name), val(sample), path(bam), path(bai)
+
+        output:
+        tuple val(name), val(sample), path("${name}.vcf")
+
+        script:
+        """
+        echo VARDICT $name
+        source activate vardict
+        vardict -G ${params.refindex}.fa -f 0.03 -N ${name} -b ${bam} -c 1 -S 2 -E 3 -g 4 -U ${params.varbed} | Rscript ${params.teststrandbias} | perl ${params.var2vcf_valid} -N ${name} -f 0.03 -A > ${name}.vcf
+       """
+}

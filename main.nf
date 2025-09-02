@@ -62,8 +62,8 @@ process GATK {
 }
 
 
-process NORMALIZACE {
-        tag "NORMALIZACE on $name"
+process VAFaNORMALIZACE {
+        tag "VAFaNORMALIZACE on $name"
         publishDir "${params.outDirectory}/${sample.run}/varianty/", mode:'copy'
 
         input:
@@ -75,10 +75,15 @@ process NORMALIZACE {
         script:
         """
         source activate bcftoolsbgziptabix
-        echo NORMALIZACE $name
-        bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf $gatk
+        echo VAFaNORMALIZACE $name
+
+        bcftools +fill-tags $gatk -Ob -o ${name}.pom2.bcf -- -t FORMAT/VAF
+        bcftools convert -O v -o ${name}.vaf.vcf ${name}.pom2.bcf 
+         
+        bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf ${name}.vaf.vcf
         bgzip ${name}.norm.vcf
         tabix ${name}.norm.vcf.gz
+
         """
 }
 
@@ -116,13 +121,8 @@ process ANOTACE_OMIM {
         """
         source activate bcftoolsbgziptabix
         echo ANOTACEOMIM $name
-        bcftools norm -m-both -f ${params.ref}.fa -o ${name}.norm.vcf ${name}.norm.acgt.vcf
 
-        bcftools view ${name}.norm.vcf  -o ${name}.pom.bcf
-        bcftools +fill-tags ${name}.pom.bcf -Ob -o ${name}.pom2.bcf -- -t FORMAT/VAF
-        bcftools convert -O v -o ${name}.norm.vaf.vcf ${name}.pom2.bcf
-
-bcftools annotate -a ${params.AR} -h ${params.ARheader} -c CHROM,FROM,TO,dedicnostAR -l dedicnostAR:append -m -xx ${name}.norm.vaf.vcf > ${name}.pom3
+bcftools annotate -a ${params.AR} -h ${params.ARheader} -c CHROM,FROM,TO,dedicnostAR -l dedicnostAR:append -m -xx ${name}.norm.acgt.vcf > ${name}.pom3
 bcftools annotate -a ${params.AD} -h ${params.ADheader} -c CHROM,FROM,TO,dedicnostAD -l dedicnostAD:append -m -aa ${name}.pom3 > ${name}.pom4
 bcftools annotate -a ${params.Xlinked}  -h ${params.Xlinkedheader} -c CHROM,FROM,TO,dedicnostXlinked -l dedicnostXlinked:append -m -bb ${name}.pom4 > ${name}.pom5
 bcftools annotate -a ${params.Ylinked}  -h ${params.Ylinkedheader} -c CHROM,FROM,TO,dedicnostYlinked -l dedicnostYlinked:append -m -cc ${name}.pom5 > ${name}.pom6
@@ -421,7 +421,7 @@ workflow {
 aligned = ALIGN(rawfastq)
 cramy = CRAM(aligned)
 varcalling = GATK(aligned)
-normalizovany = NORMALIZACE(varcalling)
+normalizovany = VAFaNORMALIZACE(varcalling)
 
 anotovanyacgt = ANOTACE_ACGT(normalizovany)
 anotovanyomim = ANOTACE_OMIM(anotovanyacgt)

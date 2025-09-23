@@ -61,6 +61,26 @@ process GATK {
         """
 }
 
+process VARDICT {
+
+         tag "VARDICT on $name"
+         publishDir "${params.outDirectory}/${sample.run}/viktor/", mode:'copy'
+
+         input:
+         tuple val(name), val(sample), path(bam), path(bai)
+         output:
+         tuple val(name), val(sample), path("${name}.vcf")
+
+         script:
+         """
+         echo VARDICT $name
+
+        source activate vardict
+        vardict -G ${params.refindex}.fa -f 0.05 -N ${name} -b ${bam} -c 1 -S 2 -E 3 -g 4 -U ${params.varbed3} | Rscript ${params.teststrandbias} | perl ${params.var2vcf_valid} -N ${name} -f 0.05 -A > ${name}.vcf
+       """
+}
+
+
 
 process VAFaNORMALIZACE {
         tag "VAFaNORMALIZACE on $name"
@@ -421,6 +441,7 @@ workflow {
 aligned = ALIGN(rawfastq)
 cramy = CRAM(aligned)
 varcalling = GATK(aligned)
+varcalling2 = VARDICT(aligned)
 normalizovany = VAFaNORMALIZACE(varcalling)
 
 anotovanyacgt = ANOTACE_ACGT(normalizovany)
